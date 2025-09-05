@@ -4,11 +4,12 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
+
 ### Part 1: 
 ## Question A 
 # Load the data
 
-stocks = pd.read_excel('/Users/comecosmolabautiere/Desktop/Yale/Fall Semester/Fall 1/Quant Investing/Week 1/Problem_Set1_2025.xlsx', sheet_name='stock_return', header=5)
+stocks = pd.read_excel('data/Problem_Set1_2025.xlsx', sheet_name='stock_return', header=5)
 stocks['date'] = pd.to_datetime(stocks['date'], format='%Y%m')
 stocks.set_index('date', inplace=True)
 stocks = stocks / 100
