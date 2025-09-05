@@ -11,9 +11,10 @@ from scipy import stats
 stocks = pd.read_excel('/Users/comecosmolabautiere/Desktop/Yale/Fall Semester/Fall 1/Quant Investing/Week 1/Problem_Set1_2025.xlsx', sheet_name='stock_return', header=5)
 stocks['date'] = pd.to_datetime(stocks['date'], format='%Y%m')
 stocks.set_index('date', inplace=True)
+stocks = stocks / 100
 print(stocks.head(5))
 
-# Data cleanign
+# Data cleaning
 print(stocks.isnull().sum())
 
 ''' Using the file "Problem_Set1_2023.xls ", form equal-weight portfolios using the first 5, first 10, first 25, 
@@ -98,5 +99,38 @@ stocks are more stable and less volatile, given their higher weights, the value 
 ''' Compute the test statistics for whether the mean return of each of the four equal- weight portfolios you calculated in part
  b) is different from zero. What statistical distribution do these test statistics follow? 
  Do you reject or fail to reject the null hypothesis that each of the mean returns on the portfolios is different from zero?'''
-t_statistic, p_value = stats.ttest_1samp(results_df['Mean Return'], 0)
-print(f"T-statistic: {t_statistic}, P-value: {p_value}")
+
+print("T-test results for each equal-weight portfolio:")
+print("=" * 60)
+
+for size in portfolio_sizes:
+    # Calculate the portfolio returns time series for this portfolio size
+    selected_stocks = stocks.iloc[:, :size]
+    portfolio_returns = selected_stocks.mean(axis=1)  # Equal-weight portfolio returns
+    
+    # Perform one-sample t-test: H0: mean = 0 vs H1: mean ≠ 0
+    t_statistic, p_value = stats.ttest_1samp(portfolio_returns, 0)
+    
+    # Calculate degrees of freedom
+    n_observations = len(portfolio_returns)
+    degrees_of_freedom = n_observations - 1
+    
+    # Decision at 5% significance level
+    alpha = 0.05
+    reject_null = p_value < alpha
+    
+    print(f"\nPortfolio with {size} stocks:")
+    print(f"  Sample size (n): {n_observations}")
+    print(f"  Sample mean: {portfolio_returns.mean():.6f}")
+    print(f"  T-statistic: {t_statistic:.4f}")
+    print(f"  P-value: {p_value:.6f}")
+    print(f"  Degrees of freedom: {degrees_of_freedom}")
+    print(f"  Reject H0 at α=0.05: {'Yes' if reject_null else 'No'}")
+
+print(f"\n{'='*60}")
+print("STATISTICAL DISTRIBUTION:")
+print("The test statistics follow a t-distribution with (n-1) degrees of freedom,")
+print("where n is the number of time periods in the portfolio return series.")
+print(f"\nNULL HYPOTHESIS: H0: μ = 0 (portfolio mean return equals zero)")
+print(f"ALTERNATIVE HYPOTHESIS: H1: μ ≠ 0 (portfolio mean return differs from zero)")
+
