@@ -13,10 +13,10 @@ stocks = pd.read_excel('data/Problem_Set1_2025.xlsx', sheet_name='stock_return',
 stocks['date'] = pd.to_datetime(stocks['date'], format='%Y%m')
 stocks.set_index('date', inplace=True)
 stocks = stocks / 100
-print(stocks.head(5))
 
 # Data cleaning
 print(stocks.isnull().sum())
+stocks = stocks.fillna(0)
 
 ''' Using the file "Problem_Set1_2023.xls ", form equal-weight portfolios using the first 5, first 10, first 25, 
 and all 50 stocks. Calculate the sample mean and standard deviation of returns for each of the four equal-weight portfolios. 
@@ -129,9 +129,57 @@ for size in portfolio_sizes:
     print(f"  Reject H0 at α=0.05: {'Yes' if reject_null else 'No'}")
 
 print(f"\n{'='*60}")
-print("STATISTICAL DISTRIBUTION:")
-print("The test statistics follow a t-distribution with (n-1) degrees of freedom,")
-print("where n is the number of time periods in the portfolio return series.")
-print(f"\nNULL HYPOTHESIS: H0: μ = 0 (portfolio mean return equals zero)")
-print(f"ALTERNATIVE HYPOTHESIS: H1: μ ≠ 0 (portfolio mean return differs from zero)")
+
+''' These tests follow a t-distribution with (n-1) degrees of freedom, in other words 179.
+ Given that the p-values for all portfolios are less than 0.05, then we reject the null hypothesis such that the mean returns
+  are different from zero. '''
+
+## Question E 
+'''Choose the first stock and test whether its returns follow a normal distribution (hint: compute the sample studentized range, skewness, 
+and kurtosis and compare them to what you would expect under a normal distribution. A simple chi-square test can be performed using the sample skewness and kurtosis measures 
+to see if the null of normally distributed returns is rejected). Repeat this test for the equal-weighted portfolio of all 50 stocks as well as the market portfolio index of all NYSE, AMEX,
+and Nasdaq stocks (which is also included in the spreadsheet).'''
+
+''' We know that, if a distribution is normal, then the skewness (which measures a distribution's asymmetry) should be around 0 and the kurtosis (which measures the tailedness) should be around 3.'''
+first_stock = stocks['TXN']
+print(first_stock.head(5))
+
+density_plot = sns.kdeplot(first_stock, fill=True)
+density_plot.set_title('Density Plot of TXN Returns')
+plt.xlabel('Returns')
+plt.ylabel('Density')
+plt.show()
+
+def check_normality(input_value):
+    """
+    Checks normality for either a single stock (by ticker name) or an equal-weight portfolio (by number of stocks).
+    input_value: str (ticker name) or int (number of stocks in portfolio)
+    """
+    if isinstance(input_value, str):
+        # Single stock by ticker name
+        data = stocks[input_value]
+        label = f"Stock: {input_value}"
+    elif isinstance(input_value, int):
+        # Equal-weight portfolio of first 'input_value' stocks
+        data = stocks.iloc[:, :input_value].mean(axis=1)
+        label = f"Equal-weight portfolio of first {input_value} stocks"
+    else:
+        raise ValueError("Input must be a ticker name (str) or number of stocks (int).")
+    
+    skewness = stats.skew(data)
+    kurtosis = stats.kurtosis(data, fisher=False)
+    print(f"{label}\nSkewness: {skewness}\nKurtosis: {kurtosis}")
+
+    n = len(data)
+    chi_square_stat = (n/6) * skewness**2 + (n/24) * (kurtosis - 3)**2
+    p_value = 1 - stats.chi2.cdf(chi_square_stat, df=2)
+    print(f"Chi-square statistic: {chi_square_stat}")
+    print(f"p-value: {p_value}")
+
+check_normality('TXN'), check_normality(50), check_normality('Market (Value Weighted Index)')
+
+'''For TXN Skewness: -0.182038016679627
+Kurtosis: 4.029679276602602. That being said, we can see that the kurtosis is higher than 3, indicating that the distribution has heavier tails than a normal distribution. In addition, 
+the skewness is slighty negative indicating a slight left skew. We found similar values of skewness and kurtosis for the equal-weighted portfolio of all 50 stocks and the market portfolio index of all NYSE, AMEX, and Nasdaq stocks.
+Furthermore, the p-values for all three tests are less than 0.05, leading us to reject the null hypothesis that the returns are normally distributed.'''
 
