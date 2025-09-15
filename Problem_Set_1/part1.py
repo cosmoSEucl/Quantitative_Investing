@@ -55,9 +55,11 @@ plt.show()
 
 ''' Comments on the shape of the functions: The curve is downward slopping which is what you would expect theoretically as each stock added should reduce the overall risk of the portfolio.
 However, the curve seems to be flattening as the number of stocks in the portfolio  increases, indicating that adding more stocks will not diversify away all of the standard deviation. 
-This can be due to the fact that as the stocks are not perfectly uncorrelated, there is some systematic risk that cannot be diversified away'''
+The variance of the portfolio will always be less than the variances of each individual stock, so long as correlation < 1. The risk cannot go to zero. 
+Diversification lowers risk, but only down to a positive limit.
+This can be due to the fact that as the stocks are not perfectly negatively correlated, there is some systematic risk that cannot be diversified away'''
 
-## Question B 
+## Question B
 ''' For all four equal-weight portfolios, decompose the estimated portfolio variance
 into its two components (the contributions of variances and covariances). Hint:
 you do not have to estimate the pairwise covariances in order to compute the
@@ -94,7 +96,9 @@ plt.show()
 
 ''' It depends, if the larger market cap stocks are more volatile with high idiosyncratic risk, 
 then the value weighted portfolio would exhibit more variance. On the other hand, if the larger market cap
-stocks are more stable and less volatile, given their higher weights, the value weighted portfolio would show less variance.'''
+stocks are more stable and less volatile, given their higher weights, the value weighted portfolio would show less variance.
+Additionally, the correlation between the stocks also plays a role. If the larger market cap stocks are highly correlated with each other, 
+then the value-weighted portfolio may exhibit more variance. '''
 
 ## Question D 
 ''' Compute the test statistics for whether the mean return of each of the four equal- weight portfolios you calculated in part
