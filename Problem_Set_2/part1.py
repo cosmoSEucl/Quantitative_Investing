@@ -195,6 +195,7 @@ to the ones calculated using weights estimated from the real data.
 num_simulations = 1000
 num_assets = len(means_vector)
 num_periods = len(industry_norf)
+
 simulated_mvp = []
 simulated_tan = []
 for _ in range(num_simulations):
@@ -217,34 +218,130 @@ print(simulated_mvp)
 simulated_tan = np.array(simulated_tan)
 print(simulated_tan)
 
-# Plot MVP simulations
+
+# --- Store for later axis scaling ---
+mvp_sim_x = simulated_mvp[:,1]
+mvp_sim_y = simulated_mvp[:,0]
+tan_sim_x = simulated_tan[:,1]
+tan_sim_y = simulated_tan[:,0]
+
+
+# Question E 
+'''e)	Now run some simulations under the empirical distribution of returns rather than the normal distribution.  
+This is called a block bootstrap simulation.
+
+•	Draw a random sample of 10 (N) returns from the empirical distribution T times (T = the number of months) with replacement.
+The way to do this is to randomly sample a particular month by selecting a number (integer) at random from 1 to T.  
+Pick the 10 industry returns corresponding to the month chosen randomly between 1 and T.  These 10 returns become your first data point of 10 industry returns
+ (effectively this becomes month t=1 in the simulation).  Then, pick another number from 1 to T, even if it is the same number (this is what resampling with replacement means),
+ and repeat.  This becomes month t=2 in the simulation.  Repeat T times and this gives you one simulation.
+(Hint:  in Matlab you can create T random numbers between 1 and T and then simply pull off the rows in the industry return matrix (which is T X 10) 
+that correspond to the T random numbers chosen.  A Matlab file is posted to help you out.)
+•	Calculate the tangency and minimum variance portfolio weights from these simulated data.  Then, apply these weights to the actual (NOT SIMULATED)
+ returns on the industries (e.g., the weights come from the simulated returns, but they are applied to true/actual returns on the industries).
+•	Then repeat 1,000 times and save the mean and standard deviation of each MVP and Tangency portfolio you calculated under each simulation of data 
+used to get the weights and applied to actual returns.
+•	On two separate plots of mean-standard deviation space, plot the simulated MVP and Tangency portfolios relative to the ones calculated using weights estimated from the real data.
+(One plot for MVP and one for Tangency portfolios, each plot will contain 1001 data points).
+•	These plots indicate the estimation error (under the empirical distribution) of the Tangency and MVP weights.  
+How does the estimation error compare under the empirical simulations versus the normal distribution simulations of question d)?
+'''
+
+num_simulations = 1000
+num_assets = len(means_vector)
+num_periods = len(industry_norf)
+simulated_mvp_empirical = []
+simulated_tan_empirical = []
+for _ in range(num_simulations):
+    random_indices = np.random.randint(0, num_periods, size=num_periods)
+    simulated_returns_empirical = industry_norf.iloc[random_indices].values
+    simulated_df_empirical = pd.DataFrame(simulated_returns_empirical, columns=industry_norf.columns)
+    sim_cov_matrix_empirical = simulated_df_empirical.cov()
+    sim_means_vector_empirical = simulated_df_empirical.mean()
+    
+    sim_weights_mvp_empirical = min_var_portfolio(sim_cov_matrix_empirical)
+    sim_weights_tan_empirical = tangent_portfolio(sim_cov_matrix_empirical, risk_free_rate, sim_means_vector_empirical)
+    
+    sim_mvp_performance_empirical = portfolio_performance(sim_weights_mvp_empirical, means_vector, cov_matrix)
+    sim_tan_performance_empirical = portfolio_performance(sim_weights_tan_empirical, means_vector, cov_matrix)
+    
+    simulated_mvp_empirical.append(sim_mvp_performance_empirical)
+    simulated_tan_empirical.append(sim_tan_performance_empirical)
+
+simulated_mvp_empirical = np.array(simulated_mvp_empirical)
+simulated_tan_empirical = np.array(simulated_tan_empirical)
+
+
+# --- Calculate global axis limits for MVP and Tangency plots ---
+# MVP axis limits
+mvp_emp_x = simulated_mvp_empirical[:,1]
+mvp_emp_y = simulated_mvp_empirical[:,0]
+mvp_x_all = np.concatenate([mvp_sim_x, mvp_emp_x])
+mvp_y_all = np.concatenate([mvp_sim_y, mvp_emp_y])
+mvp_x_margin = (mvp_x_all.max() - mvp_x_all.min()) * 0.1
+mvp_y_margin = (mvp_y_all.max() - mvp_y_all.min()) * 0.1
+mvp_xlim = (mvp_x_all.min() - mvp_x_margin, mvp_x_all.max() + mvp_x_margin)
+mvp_ylim = (mvp_y_all.min() - mvp_y_margin, mvp_y_all.max() + mvp_y_margin)
+
+# Tangency axis limits
+tan_emp_x = simulated_tan_empirical[:,1]
+tan_emp_y = simulated_tan_empirical[:,0]
+tan_x_all = np.concatenate([tan_sim_x, tan_emp_x])
+tan_y_all = np.concatenate([tan_sim_y, tan_emp_y])
+tan_x_margin = (tan_x_all.max() - tan_x_all.min()) * 0.1
+tan_y_margin = (tan_y_all.max() - tan_y_all.min()) * 0.1
+tan_xlim = (tan_x_all.min() - tan_x_margin, tan_x_all.max() + tan_x_margin)
+tan_ylim = (tan_y_all.min() - tan_y_margin, tan_y_all.max() + tan_y_margin)
+
+# --- Plot MVP simulations (Normal) ---
 plt.figure(figsize=(10, 7))
-plt.scatter(simulated_mvp[:,1], simulated_mvp[:,0], alpha=0.5, label='Simulated MVPs') # simulated_mvp[:,1] = all of the standard deviations, simulated_mvp[:,0] = all of the returns
+plt.scatter(mvp_sim_x, mvp_sim_y, alpha=0.5, label='Simulated MVPs')
 plt.scatter(mvp_performance[1], mvp_performance[0], color='r', s=200, label='Actual MVP')
 plt.xlabel('Risk (Standard Deviation)')
 plt.ylabel('Return')
 plt.title('MVP Simulations vs Actual')
 plt.legend()
 plt.grid(True)
-# Set axis limits based on data range with a small margin
-x_margin = (simulated_mvp[:,1].max() - simulated_mvp[:,1].min()) * 0.1
-y_margin = (simulated_mvp[:,0].max() - simulated_mvp[:,0].min()) * 0.1
-plt.xlim(simulated_mvp[:,1].min() - x_margin, simulated_mvp[:,1].max() + x_margin)
-plt.ylim(simulated_mvp[:,0].min() - y_margin, simulated_mvp[:,0].max() + y_margin)
+plt.xlim(mvp_xlim)
+plt.ylim(mvp_ylim)
 plt.show()
 
-# Plot Tangency simulations
+# --- Plot MVP simulations (Empirical) ---
 plt.figure(figsize=(10, 7))
-plt.scatter(simulated_tan[:,1], simulated_tan[:,0], alpha=0.5, label='Simulated Tangency Portfolios')
+plt.scatter(mvp_emp_x, mvp_emp_y, alpha=0.5, label='Simulated MVPs (Empirical)')
+plt.scatter(mvp_performance[1], mvp_performance[0], color='r', s=200, label='Actual MVP')
+plt.xlabel('Risk (Standard Deviation)')
+plt.ylabel('Return')
+plt.title('MVP Empirical Simulations vs Actual')
+plt.legend()
+plt.grid(True)
+plt.xlim(mvp_xlim)
+plt.ylim(mvp_ylim)
+plt.show()
+
+# --- Plot Tangency simulations (Normal) ---
+plt.figure(figsize=(10, 7))
+plt.scatter(tan_sim_x, tan_sim_y, alpha=0.5, label='Simulated Tangency Portfolios')
 plt.scatter(tan_performance[1], tan_performance[0], color='r', s=200, label='Actual Tangency Portfolio')
 plt.xlabel('Risk (Standard Deviation)')
 plt.ylabel('Return')
 plt.title('Tangency Portfolio Simulations vs Actual')
 plt.legend()
 plt.grid(True)
-# Set axis limits based on data range with a small margin
-x_margin = (simulated_tan[:,1].max() - simulated_tan[:,1].min()) * 0.1
-y_margin = (simulated_tan[:,0].max() - simulated_tan[:,0].min()) * 0.1
-plt.xlim(simulated_tan[:,1].min() - x_margin, simulated_tan[:,1].max() + x_margin)
-plt.ylim(simulated_tan[:,0].min() - y_margin, simulated_tan[:,0].max() + y_margin)
+plt.xlim(tan_xlim)
+plt.ylim(tan_ylim)
 plt.show()
+
+# --- Plot Tangency simulations (Empirical) ---
+plt.figure(figsize=(10, 7))
+plt.scatter(tan_emp_x, tan_emp_y, alpha=0.5, label='Simulated Tangency Portfolios (Empirical)')
+plt.scatter(tan_performance[1], tan_performance[0], color='r', s=200, label='Actual Tangency Portfolio')
+plt.xlabel('Risk (Standard Deviation)')
+plt.ylabel('Return')
+plt.title('Tangency Portfolio Empirical Simulations vs Actual')
+plt.legend()
+plt.grid(True)
+plt.xlim(tan_xlim)
+plt.ylim(tan_ylim)
+plt.show()
+
